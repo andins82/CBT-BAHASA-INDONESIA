@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CBT Bahasa Indonesia</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa6b2;--accent:#0ea5a4;--accent-2:#06b6d4;--glass: rgba(255,255,255,0.03)}
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071226 0%, #0b2233 100%);color:#e6eef6}
+    .container{max-width:980px;margin:28px auto;padding:20px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:22px;box-shadow:0 6px 24px rgba(2,6,23,0.6)}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+    .small{font-size:13px;color:var(--muted)}
+    /* Login */
+    .login-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    label{display:block;font-weight:600;margin-bottom:6px}
+    input[type=text], input[type=password]{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    .row{display:flex;gap:10px;align-items:center}
+    button{background:var(--accent);border:none;color:#042027;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    .eye{background:transparent;border:none;color:var(--muted);cursor:pointer}
+    /* Exam */
+    .topbar{display:flex;align-items:center;gap:12px}
+    .timer{background:var(--glass);padding:8px 10px;border-radius:8px;font-weight:700}
+    .hambtn{width:36px;height:36px;border-radius:8px;background:var(--glass);display:flex;align-items:center;justify-content:center;cursor:pointer}
+    .qcard{margin-top:18px;padding:18px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));min-height:360px}
+    .question{font-weight:700;margin-bottom:10px}
+    .options{display:grid;gap:10px}
+    .opt{padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+    .opt.selected{outline:2px solid rgba(6,182,212,0.14);background:linear-gradient(90deg, rgba(6,182,212,0.04), transparent)}
+    .nav{display:flex;justify-content:space-between;margin-top:14px}
+    .nav button[disabled]{opacity:0.35;cursor:not-allowed}
+    /* grid drawer */
+    .drawer{position:fixed;right:20px;top:80px;background:var(--card);padding:12px;border-radius:10px;box-shadow:0 6px 18px rgba(2,6,23,0.6);max-width:320px;display:none}
+    .qgrid{display:grid;grid-template-columns:repeat(6,40px);gap:8px}
+    .qnum{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.04);cursor:pointer;color:var(--muted);font-weight:700}
+    .qnum.answered{background:#10b981;color:#061316} /* hijau terang untuk terjawab (kontras) */
+    .qnum.unanswered{background:rgba(255,255,255,0.02);color:var(--muted)} /* belum dijawab */
+    /* pages */
+    .view{display:none}
+    .view.active{display:block}
+    footer{display:flex;justify-content:space-between;margin-top:18px;color:var(--muted)}
+    .confirm{display:flex;gap:10px}
+    .logo{font-weight:800;color:var(--accent-2)}
+    /* final */
+    .score{font-size:36px;font-weight:900;margin:20px 0}
+    /* responsive */
+    @media (max-width:760px){.login-grid{grid-template-columns:1fr}.container{padding:12px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <header>
+        <div>
+          <div class="logo">CBT — Bahasa Indonesia</div>
+        </div>
+        <div class="topbar">
+          <!-- disembunyikan sampai login -->
+          <div id="timer" class="timer" style="display:none">60:00</div>
+          <button id="hambtn" class="hambtn" title="Nomor soal" style="display:none">
+            <svg width="18" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- LOGIN -->
+      <section id="view-login" class="view active">
+        <div class="login-grid">
+          <div>
+            <label>Username</label>
+            <input id="username" type="text" autocomplete="off" />
+            <label style="margin-top:12px">Password</label>
+            <div style="display:flex;gap:8px;align-items:center"><input id="password" type="password" /><button id="toggleEye" class="eye" title="Tampilkan/ Sembunyikan"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button></div>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button id="loginBtn">Login</button>
+            </div>
+          </div>
+          <!-- petunjuk & catatan dihapus (kosong di samping) -->
+          <div style="border-left:1px solid rgba(255,255,255,0.02);padding-left:14px">
+            <!-- intentionally left blank to keep layout symmetric -->
+          </div>
+        </div>
+      </section>
+
+      <!-- EXAM -->
+      <section id="view-exam" class="view">
+        <div class="qcard">
+          <div id="q-area">
+            <!-- question rendered by JS -->
+          </div>
+          <div class="nav">
+            <button id="prevBtn" class="ghost">&larr; Sebelumnya</button>
+            <div>
+              <button id="nextBtn">Selanjutnya &rarr;</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONFIRM -->
+      <section id="view-confirm" class="view">
+        <div style="padding:20px">
+          <h2>Apakah anda sudah yakin dengan jawaban anda?</h2>
+          <div class="confirm">
+            <button id="confirmYes">Yakin</button>
+            <button id="confirmNo" class="ghost">Kembali</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RESULT -->
+      <section id="view-result" class="view">
+        <div style="padding:20px;text-align:center">
+          <h2>Hasil Ujian</h2>
+          <div id="scoreBox" class="score">0</div>
+          <div class="small">Skor dihitung: (jumlah benar / 3) × 10</div>
+          <div style="margin-top:18px"><button id="logoutBtn" class="ghost">Logout</button></div>
+        </div>
+      </section>
+
+      <footer>
+        <div class="small">&nbsp;</div>
+        <div class="small">&nbsp;</div>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- drawer -->
+  <div id="drawer" class="drawer" aria-hidden="true">
+    <div class="small">Status jawaban</div>
+    <div style="height:12px"></div>
+    <div class="qgrid" id="qGrid"></div>
+  </div>
+
+  <script>
+    // ---------- ACCOUNTS (internal) ----------
+    const accounts = [
+      {u:'peserta01',p:'P@ss01'}, {u:'peserta02',p:'P@ss02'}, {u:'peserta03',p:'P@ss03'},
+      {u:'peserta04',p:'P@ss04'}, {u:'peserta05',p:'P@ss05'}, {u:'peserta06',p:'P@ss06'},
+      {u:'peserta07',p:'P@ss07'}, {u:'peserta08',p:'P@ss08'}, {u:'peserta09',p:'P@ss09'},
+      {u:'peserta10',p:'P@ss10'}, {u:'peserta11',p:'P@ss11'}, {u:'peserta12',p:'P@ss12'},
+      {u:'peserta13',p:'P@ss13'}, {u:'peserta14',p:'P@ss14'}, {u:'peserta15',p:'P@ss15'},
+      {u:'peserta16',p:'P@ss16'}, {u:'peserta17',p:'P@ss17'}, {u:'peserta18',p:'P@ss18'},
+      {u:'peserta19',p:'P@ss19'}, {u:'peserta20',p:'P@ss20'}, {u:'peserta21',p:'P@ss21'},
+      {u:'peserta22',p:'P@ss22'}, {u:'peserta23',p:'P@ss23'}, {u:'peserta24',p:'P@ss24'},
+      {u:'peserta25',p:'P@ss25'}, {u:'peserta26',p:'P@ss26'}, {u:'peserta27',p:'P@ss27'}
+    ];
+
+    // ---------- QUESTIONS (30 HOTS Bahasa Indonesia) ----------
+    const questions = [
+      {q:`Bacalah kutipan berikut.\n\n\"Matahari tergelincir di balik pagar langit, meninggalkan jejak merah yang mengingatkan kita pada sesuatu yang tak pernah selesai: cerita yang kita warisi.\"\n\nBerdasarkan gaya bahasa dalam kutipan, apa fungsi metafora tersebut?`, c:[`Menyampaikan fakta ilmiah tentang matahari`,`Menggambarkan suasana emosional dan kontinuitas sejarah`,`Memberi instruksi teknis pada pembaca`,`Membuat perintah langsung kepada pembaca`,`Menyajikan data statistik`], a:1},
+      {q:`Dalam sebuah pidato, pembicara menggunakan argumen nilai dan bukti historis untuk mendukung pendapatnya. Jenis penalaran apa yang sedang ia gunakan?`, c:[`Induktif dari contoh ke teori`,`Deduktif dari prinsip ke kasus`,`Kausalitas sederhana`,`Analogi semu`,`Retorika tanpa bukti`], a:0},
+      {q:`Perhatikan kalimat: "Ia menatap kosong ke arah laut, seolah-olah waktu itu tak lagi miliknya." Teknik bahasa yang digunakan adalah...`, c:[`Hiperbola`,`Personifikasi`,`Metafora`,`Simile (perumpamaan)`,`Ironi`], a:3},
+      {q:`Sebuah pantun berakhir dengan kata "sayang" tetapi bait sebelumnya menyinggung kepedihan. Sikap penyair kemungkinan besar...`, c:[`Objektif dan netral`,`Sinis dan merendahkan`,`Rindu dan penyesalan`,`Gembira dan meriah`,`Netral informatif`], a:2},
+      {q:`Sebuah teks argumentatif memuat klaim: "Pendidikan karakter harus dimulai dari keluarga." Manakah bukti yang paling kuat untuk mendukung klaim ini?`, c:[`Opini dari tokoh terkenal tanpa data`,`Hasil penelitian longitudinal yang menunjukkan pengaruh pola asuh`,`Kutipan anonim dari internet`,`Statemen yang tidak relevan`,`Cerita fiksi`], a:1},
+      {q:`Dalam analisis wacana, kata-kata yang berulang sering menunjukkan...`, c:[`Kekurangan kosakata penulis`,`Tema atau fokus yang ingin ditekankan`,`Kesalahan ketik`,`Perubahan topik`,`Suatu istilah teknis`], a:1},
+      {q:`Bacalah kalimat: "Keputusan itu menggelinding seperti bola salju." Makna ungkapan tersebut adalah...`, c:[`Keputusan menjadi lebih mudah diambil`,`Dampak keputusan bertambah besar seiring waktu`,`Keputusan pecah menjadi beberapa bagian`,`Keputusan tidak relevan`,`Keputusan bersifat instan`], a:1},
+      {q:`Dalam teks eksposisi bertema lingkungan, penulis menghadirkan data ilmiah dan contoh lokal. Tujuan gabungan teknik ini adalah...`, c:[`Mengecoh pembaca`,`Menyeimbangkan kredibilitas dengan relevansi lokal`,`Mengurangi bobot argumen`,`Meningkatkan dramatisasi tanpa dasar`,`Mempercepat penulisan`], a:1},
+      {q:`Sebuah iklan menggunakan kata-kata emosional (e.g., "bahagia, aman, nyaman") dibandingkan fakta teknis. Strategi retoris yang dimaksud adalah...`, c:[`Logos`,`Ethos`,`Pathos`,`Kairos`,`Metonymi`], a:2},
+      {q:`Dalam sebuah cerita pendek, konflik internal tokoh utama paling efektif dikembangkan melalui...`, c:[`Deskripsi fisik semata`,`Monolog batin dan pilihan moral`,`Peta lokasi`,`Daftar karakter pendukung`,`Grafik statistik`], a:1},
+      {q:`Bacalah pernyataan: "Jika semua siswa rajin belajar, maka rata-rata nilai sekolah akan naik." Ini adalah contoh argumen...`, c:[`Post hoc ergo propter hoc`,`Generalization dari kasus tunggal`,`Pemikiran probabilistik berbasis premis`,`Argumentum ad hominem`,`Reductio ad absurdum`], a:2},
+      {q:`Dalam memilih judul esai ilmiah, penting untuk memastikan judul bersifat...`, c:[`Sensasional dan panjang`,`Ambigu dan emosional`,`Ringkas, jelas, dan informatif`,`Berbahasa percakapan santai`,`Tanpa kata kunci`], a:2},
+      {q:`Teks drama sering bergantung pada dialog untuk menyampaikan konflik. Fungsi dialog yang paling esensial adalah...`, c:[`Menjelaskan sejarah panjang keluarga`,`Memperlihatkan perkembangan karakter dan konflik`,`Mengganti narator`,`Menyajikan data eksperimen`,`Menuliskan daftar nama`], a:1},
+      {q:`Bacalah kutipan prosa: "Rumah itu berdiri seperti ingatan yang tak pernah diperbaiki." Pernyataan itu paling tepat dikatakan...`, c:[`Hiperbola`,`Personifikasi`,`Metafora yang kompleks`,`Perumpamaan literal`,`Paradoks`], a:2},
+      {q:`Seorang siswa diminta membedakan fakta dan opini. Pernyataan "Matahari terbit dari timur" termasuk...`, c:[`Opini`,`Fakta yang dapat diverifikasi`,`Nilai estetika`,`Hipersensitivitas`,`Imajinasi`], a:1},
+      {q:`Dalam teks naratif, sudut pandang orang ketiga terbatas (limited) berarti...`, c:[`Penulis mengetahui segala hal secara total`,`Fokus pada pikiran dan perasaan satu tokoh tertentu`,`Narator adalah tokoh dalam cerita`,`Narator tidak punya suara`,`Teks tidak memiliki plot`], a:1},
+      {q:`Sebuah artikel opini menyertakan sumber sahih, tetapi juga menggunakan bahasa menyerang lawan argumen. Teknik ini disebut...`, c:[`Ad hominem`,`Slippery slope`,`Appeal to authority`,`Straw man`,`False dilemma`], a:0},
+      {q:`Penggunaan konjungsi yang tepat dapat memperjelas hubungan sebab-akibat. Pilih contoh konjungsi yang tepat:`, c:[`Namun`,`Karena itu`,`Tetapi`,`Sementara itu`,`Kemudian`], a:1},
+      {q:`Dalam membandingkan dua teks, metode paling tepat untuk menemukan perbedaan nilai adalah...`, c:[`Menilai panjang tiap kalimat saja`,`Menganalisis pilihan leksikal dan perspektif pengarang`,`Menghitung jumlah paragraf`,`Melihat warna kertas`,`Memeriksa ukuran font`], a:1},
+      {q:`Bacalah puisi singkat:\n\n\"Langkah di lorong rumah tua\nMencatat debu pada kenangan\nSuara pintu menutup, dan bulan menatap\" \n\nGaya bahasa dominan pada baris kedua adalah...`, c:[`Hiperbola`,`Metafora`,`Personifikasi`,`Simile`,`Aliterasi`], a:2},
+      {q:`Dalam teks persuasif, "kesaksian pengguna" termasuk jenis bukti...`, c:[`Anekdotal namun persuasif jika dipadukan bukti lain`,`Satu-satunya bukti ilmiah yang dapat diandalkan`,`Bukti statistik murni`,`Spesifikasi teknis produk`,`Bukti yang tidak pernah berguna`], a:0},
+      {q:`Sebuah paragraf koheren biasanya memiliki...`, c:[`Kalimat acak tanpa hubungan`,`Tema sentral dan transisi yang baik`,`Jumlah kata yang sama setiap kalimat`,`Kalimat pendek semua`,`Satu kalimat panjang saja`], a:1},
+      {q:`Bacalah kalimat berikut: \"Guru itu bertanya, 'Mengapa kita belajar sastra?'\" Tipe tanda kutip yang benar bila menyisipkan dialog di dalam kalimat adalah...`, c:[`Tanpa tanda kutip tambahan`,`Menggunakan tanda kutip tunggal di dalam tanda kutip ganda (atau sebaliknya)`,`Menulis italic saja`,`Menghapus tanda baca akhir`,`Menambah tanda hubung`], a:1},
+      {q:`Untuk menilai kredibilitas sumber daring, indikator yang paling lemah adalah...`, c:[`Peer-review dan reputasi institusi`,`Transparansi penulis dan metode`,`Situs tanpa identitas penulis atau tanggal publikasi`,`Adanya referensi dan kutipan`,`Kontak resmi lembaga`], a:2},
+      {q:`Dalam membuat abstrak akademik, hindari...`, c:[`Ringkasan tujuan dan hasil`,`Penggunaan istilah teknis relevan`,`Menambahkan opini subjektif tanggapan pribadi`,`Penulisan singkat dan padat`,`Kata kunci`], a:2},
+      {q:`Penerapan majas ironi pada kalimat: "Sungguh kering tanah itu, sampai ikan pun bermigrasi." Fungsi utama ironi di sini...?`, c:[`Mengungkapkan kebetulan`,`Menunjukkan kontras antara harapan dan realitas untuk kritik sosial`,`Memberi informasi ilmiah`,`Memperjelas prosedur`,`Menambah keterangan teknis`], a:1},
+      {q:`Dalam teks editorial, menampilkan data statistik tanpa konteks dapat menimbulkan...`, c:[`Kesimpulan yang lebih valid`,`Interpretasi menyesatkan atau bias`,`Keterbacaan lebih tinggi`,`Netralitas absolut`,`Informasi lebih akurat`], a:1},
+      {q:`Sebuah kalimat analitis yang baik sering diawali dengan kata-kata seperti: "Hal ini menunjukkan bahwa..." Fungsi pembukaan semacam ini adalah...`, c:[`Menyisipkan kutipan langsung`,`Menjelaskan kesimpulan dari bukti`,`Memperkenalkan topik baru tanpa hubungan`,`Memberi data mentah`,`Menonaktifkan argumen`], a:1}
+    ];
+
+    // ---------- STATE ----------
+    let state = {
+      currentView: 'login',
+      loggedIn: false,
+      user:null,
+      timeLeft: 60*60, // seconds
+      timerInterval: null,
+      timerRunning: false,
+      currentQ:0,
+      answers: Array(questions.length).fill(null),
+      answeredSet: new Set()
+    };
+
+    // ---------- DOM ----------
+    const views = {
+      login:document.getElementById('view-login'),
+      exam:document.getElementById('view-exam'),
+      confirm:document.getElementById('view-confirm'),
+      result:document.getElementById('view-result')
+    };
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const toggleEye = document.getElementById('toggleEye');
+    const loginBtn = document.getElementById('loginBtn');
+    const qArea = document.getElementById('q-area');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const timerEl = document.getElementById('timer');
+    const hambtn = document.getElementById('hambtn');
+    const drawer = document.getElementById('drawer');
+    const qGrid = document.getElementById('qGrid');
+    const confirmYes = document.getElementById('confirmYes');
+    const confirmNo = document.getElementById('confirmNo');
+    const scoreBox = document.getElementById('scoreBox');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // toggle password
+    toggleEye.addEventListener('click', ()=>{
+      if(passwordInput.type==='password') passwordInput.type='text'; else passwordInput.type='password';
+    });
+
+    // switch view helper (also show/hide timer & hambtn)
+    function switchView(v){
+      Object.values(views).forEach(x=>x.classList.remove('active'));
+      if(v==='login') views.login.classList.add('active');
+      if(v==='exam') views.exam.classList.add('active');
+      if(v==='confirm') views.confirm.classList.add('active');
+      if(v==='result') views.result.classList.add('active');
+      state.currentView = v;
+
+      // timer & hambtn visible only on exam and only if user is logged in
+      if(v === 'exam' && state.loggedIn){
+        timerEl.style.display = 'block';
+        hambtn.style.display = 'flex';
+      } else {
+        timerEl.style.display = 'none';
+        hambtn.style.display = 'none';
+      }
+    }
+
+    // timer: start only if not already running; do NOT reset timeLeft when starting if already counting
+    function startTimer(){
+      if(state.timerRunning) return;
+      state.timerRunning = true;
+      // show (switchView will show if needed). We still run interval even when timer hidden.
+      state.timerInterval = setInterval(()=>{
+        state.timeLeft--;
+        updateTimerDisplay();
+        if(state.timeLeft <= 0){
+          clearInterval(state.timerInterval);
+          state.timerInterval = null;
+          state.timerRunning = false;
+          finishExam();
+        }
+      },1000);
+      updateTimerDisplay();
+    }
+
+    function updateTimerDisplay(){
+      const m = String(Math.floor(Math.max(0,state.timeLeft)/60)).padStart(2,'0');
+      const s = String(Math.max(0,state.timeLeft)%60).padStart(2,'0');
+      timerEl.textContent = `${m}:${s}`;
+    }
+
+    // login
+    loginBtn.addEventListener('click', ()=>{
+      const u = usernameInput.value.trim();
+      const p = passwordInput.value;
+      const found = accounts.find(acc=>acc.u===u && acc.p===p);
+      if(!found){ alert('Username atau password salah. Pastikan mengetik benar.'); return; }
+      state.loggedIn = true;
+      state.user = u;
+      // show exam (timer & hambtn will be made visible by switchView)
+      switchView('exam');
+      // if timer not running yet, start it (do NOT reset existing timeLeft)
+      startTimer();
+      renderQuestion(); renderGrid();
+    });
+
+    // logout (explicit logout via button) -> fully reset including timer
+    logoutBtn.addEventListener('click', ()=>{
+      fullReset();
+      switchView('login');
+    });
+
+    // render question
+    function renderQuestion(){
+      const i = state.currentQ; const item = questions[i];
+      qArea.innerHTML = `
+        <div class="question">Soal ${i+1}. ${item.q.replace(/\n/g,'<br>')}</div>
+        <div class="options" id="opts"></div>
+      `;
+      const opts = document.getElementById('opts');
+      item.c.forEach((choice,idx)=>{
+        const div = document.createElement('div'); div.className='opt'; div.dataset.idx=idx; div.tabIndex=0; div.innerHTML=`<strong>${String.fromCharCode(65+idx)}.</strong> ${choice}`;
+        if(state.answers[i]===idx) div.classList.add('selected');
+        div.addEventListener('click', ()=>{ selectOption(i,idx); });
+        opts.appendChild(div);
+      });
+      // nav buttons
+      prevBtn.disabled = (i===0);
+      // special rule: for soal pertama tombol selanjutnya berwarna redup dan tidak dapat ditekan until answered
+      if(i===0){ nextBtn.disabled = (state.answers[0]==null); nextBtn.textContent = 'Selanjutnya →'; }
+      else if(i===questions.length-1){ nextBtn.disabled = false; nextBtn.textContent = 'Submit'; }
+      else { nextBtn.disabled = false; nextBtn.textContent = 'Selanjutnya →'; }
+      updateGridHighlight();
+    }
+
+    function selectOption(qIndex, optIndex){
+      state.answers[qIndex]=optIndex; state.answeredSet.add(qIndex);
+      const opts = document.querySelectorAll('#opts .opt');
+      opts.forEach(o=>o.classList.remove('selected'));
+      const selected = Array.from(opts).find(o=>Number(o.dataset.idx)===optIndex);
+      if(selected) selected.classList.add('selected');
+      // enable next if on first question now answered
+      if(qIndex===0){ nextBtn.disabled = false; }
+      updateGridHighlight();
+    }
+
+    prevBtn.addEventListener('click', ()=>{
+      if(state.currentQ>0){ state.currentQ--; renderQuestion(); }
+    });
+    nextBtn.addEventListener('click', ()=>{
+      if(state.currentQ===questions.length-1){ // submit -> confirm
+        switchView('confirm');
+      } else {
+        if(state.currentQ===0 && state.answers[0]==null){ return; }
+        state.currentQ++; renderQuestion();
+      }
+    });
+
+    confirmNo.addEventListener('click', ()=>{ switchView('exam'); });
+    confirmYes.addEventListener('click', ()=>{ calculateScore(); switchView('result'); /* keep timer stopped only when exam truly finished */ if(state.timerInterval){ clearInterval(state.timerInterval); state.timerInterval=null; state.timerRunning=false; } });
+
+    function calculateScore(){
+      let correct = 0;
+      questions.forEach((q,idx)=>{ if(state.answers[idx]===q.a) correct++; });
+      const score = (correct/3)*10;
+      scoreBox.textContent = Number.isFinite(score)?score.toFixed(2):'0.00';
+    }
+
+    // drawer grid (hamburger)
+    hambtn.addEventListener('click', ()=>{ drawer.style.display = drawer.style.display==='block'?'none':'block'; renderGrid(); });
+
+    function renderGrid(){
+      qGrid.innerHTML='';
+      questions.forEach((_,idx)=>{
+        const el = document.createElement('div'); el.className='qnum';
+        el.textContent = idx+1;
+        if(state.answers[idx]!=null) el.classList.add('answered'); else el.classList.add('unanswered');
+        el.addEventListener('click', ()=>{ state.currentQ=idx; renderQuestion(); drawer.style.display='none'; });
+        qGrid.appendChild(el);
+      });
+    }
+    function updateGridHighlight(){ renderGrid(); }
+
+    // anti-cheat: when user leaves tab, immediately reset answers and return to login,
+    // BUT do NOT stop the timer (timer continues counting in background).
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.hidden && state.currentView === 'exam'){
+        // reset answers but keep timer running
+        state.answers = Array(questions.length).fill(null);
+        state.answeredSet.clear();
+        state.currentQ = 0;
+        state.loggedIn = false;
+        // switch to login (this will hide timer & hambtn visually; timer keeps running)
+        switchView('login');
+        // clear username/password inputs for security
+        usernameInput.value=''; passwordInput.value='';
+        renderQuestion(); renderGrid();
+        alert('Anda meninggalkan tab — ujian dibatalkan dan Anda dikembalikan ke halaman login. Jawaban direset.');
+      }
+    });
+
+    // finish exam due to timeout
+    function finishExam(){ calculateScore(); switchView('result'); }
+
+    // full reset (used when user clicks Logout) -> stop timer entirely and reset everything
+    function fullReset(){
+      if(state.timerInterval){ clearInterval(state.timerInterval); state.timerInterval=null; }
+      state.timerRunning = false;
+      state.timeLeft = 60*60;
+      state.currentQ = 0;
+      state.answers = Array(questions.length).fill(null);
+      state.answeredSet.clear();
+      state.loggedIn = false;
+      state.user = null;
+      usernameInput.value=''; passwordInput.value='';
+      renderQuestion(); renderGrid();
+      updateTimerDisplay();
+    }
+
+    // initial render: hide timer & hambtn (already hidden via inline style) and render initial question/grid state
+    renderQuestion();
+    renderGrid();
+
+    // disable right-click and some keys to reduce cheating (not foolproof)
+    document.addEventListener('contextmenu', e=>e.preventDefault());
+    document.addEventListener('keydown', e=>{
+      if(e.ctrlKey && (e.key==='c' || e.key==='v' || e.key==='x' || e.key==='s')){ e.preventDefault(); }
+      if(e.key==='F12') e.preventDefault();
+    });
+  </script>
+</body>
+</html>
